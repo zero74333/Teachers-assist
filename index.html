@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light only">
+<meta name="supported-color-schemes" content="light">
+<meta name="darkreader-lock">
+<title>Teachers Assist — Marks, Grade & GPA</title>
+<style>
+:root{color-scheme:light only}html{font-size:112.5%;background:#f3f6fb;-webkit-text-size-adjust:100%}:root{--ink:#182230;--muted:#667085;--line:#dce3ec;--bg:#f3f6fb;--blue:#3157d5}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{width:min(920px,calc(100% - 20px));margin:16px auto}header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px}h1{font-size:clamp(1.35rem,3.5vw,2rem);letter-spacing:-.04em;margin:0 0 4px}.sub{color:var(--muted);margin:0;font-size:1rem;line-height:1.4}
+.panel{background:#fff;color:#182230;border:1px solid var(--line);border-radius:14px;padding:clamp(12px,2vw,18px);margin:10px 0;box-shadow:0 6px 20px #15274708}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 10px}button{border:0;border-radius:9px;padding:10px 15px;font:inherit;font-size:1rem;font-weight:650;cursor:pointer}.secondary{background:#e9eefb;color:#2444a8}.primary{background:var(--blue);color:#fff}
+table{width:100%;border-collapse:collapse;font-size:1rem}th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line)}th{background:#f7f9fd;color:#536174;font-weight:700}tbody tr:last-child td{border-bottom:0}.table-wrap{overflow-x:auto}
+input{background:#fff;color:#182230;-webkit-text-fill-color:#182230;width:100%;max-width:150px;padding:8px 9px;border:1px solid #cbd5e1;border-radius:8px;font:inherit;font-size:1.05rem}input.invalid{border-color:#b42318;background:#fff5f4}input.invalid:focus{outline-color:#b4231826}#gradeTable tr.current td{background:#e4ebff;font-weight:700}input:focus{outline:3px solid #3157d526;border-color:var(--blue)}
+.pill{display:inline-block;min-width:35px;text-align:center;border-radius:999px;background:#e4ebff;color:#2345a8;padding:4px 8px;font-size:.95rem;font-weight:750}
+.total-panel{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.metric{background:#f7f9fd;border:1px solid var(--line);border-radius:11px;padding:11px;min-width:0}.label{font-size:.88rem;color:var(--muted)}.value{font-size:clamp(1.15rem,3vw,1.65rem);font-weight:750;letter-spacing:-.03em;margin-top:4px;overflow-wrap:anywhere}.hint,.status{font-size:.92rem;color:var(--muted);line-height:1.4;margin:8px 0 0}.error{color:#b42318}
+footer{text-align:center;color:var(--muted);font-size:.95rem;font-weight:600;padding:8px 0 12px}
+@media(min-width:760px){.wrap{margin:18px auto}.subject-panel{padding:15px 20px}.subject-panel table th,.subject-panel table td{padding:10px 14px}}
+@media(max-width:520px){.wrap{width:calc(100% - 12px);margin:8px auto}header{display:block}.sub{font-size:.92rem}.panel{padding:10px;border-radius:11px;margin:8px 0}table{font-size:.95rem}th,td{padding:8px 5px}input{max-width:100%;width:88px;padding:8px 6px;font-size:1rem}.total-panel{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.metric{padding:9px 7px}.label{font-size:.85rem}.value{font-size:1.4rem}.actions button{flex:1;padding:9px 10px}}
+@media (prefers-color-scheme:dark){:root{color-scheme:light only}html,body{background:#f3f6fb;color:#182230}.panel{background:#fff;color:#182230}input{background:#fff;color:#182230}}
+@media print{body{background:#fff}.wrap{width:100%;margin:0}.panel{box-shadow:none}button{display:none}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+  <div>
+    <h1>Teachers Assist</h1>
+    <p class="sub" id="subtitle">S.A mode: enter S.A marks out of 80 and F.A marks out of 20 for each subject.</p>
+  </div>
+</header>
+<section class="panel">
+  <div class="actions">
+    <button class="secondary" id="clear" type="button">Clear all marks</button>
+    <button class="secondary" id="print" type="button">Print results</button>
+    <button class="primary" id="storeData" type="button">Store</button>
+    <button class="secondary" id="showStored" type="button">Stored data</button>
+  </div>
+  <label class="toggle-row" for="formativeToggle">
+    <span><strong id="modeLabel">F.A mode</strong><span class="toggle-help">Switch on to enter PW, Seminar, CLW and Test marks (5 each).</span></span>
+    <input id="formativeToggle" type="checkbox" role="switch" aria-label="Enable F.A mode">
+  </label>
+  <p id="message" class="status" aria-live="polite">Enter marks to calculate results.</p>
+</section>
+<section class="panel subject-panel">
+  <div class="table-wrap">
+    <table><thead id="subjectHead"></thead><tbody id="subjects"></tbody></table>
+  </div>
+</section>
+<section class="panel">
+  <h2 style="font-size:1.2rem;margin:0 0 10px">Total result</h2>
+  <div class="total-panel">
+    <div class="metric"><div class="label">Total marks</div><div class="value" id="total">—</div><div class="hint" id="outOf">out of 600</div></div>
+    <div class="metric"><div class="label">Percentage</div><div class="value" id="percentage">—</div></div>
+    <div class="metric"><div class="label">Overall grade</div><div class="value" id="overallGrade">—</div></div>
+    <div class="metric"><div class="label">Overall GPA</div><div class="value" id="overallGpa">—</div></div>
+  </div>
+  <p class="hint" id="resultHint">S.A and F.A marks are entered separately. Each subject totals 100; all six subjects total 600.</p>
+</section>
+<section class="panel">
+  <h2 style="font-size:1.2rem;margin:0 0 10px">Grade reference</h2>
+  <div class="table-wrap"><table><thead><tr><th>Marks</th><th>Grade</th><th>GPA</th></tr></thead><tbody id="gradeTable">
+    <tr data-min="91" data-max="100"><td>91–100</td><td>A1</td><td>10</td></tr>
+    <tr data-min="81" data-max="90"><td>81–90</td><td>A2</td><td>9</td></tr>
+    <tr data-min="71" data-max="80"><td>71–80</td><td>B1</td><td>8</td></tr>
+    <tr data-min="61" data-max="70"><td>61–70</td><td>B2</td><td>7</td></tr>
+    <tr data-min="51" data-max="60"><td>51–60</td><td>C1</td><td>6</td></tr>
+    <tr data-min="41" data-max="50"><td>41–50</td><td>C2</td><td>5</td></tr>
+    <tr data-min="35" data-max="40"><td>35–40</td><td>D1</td><td>4</td></tr>
+    <tr data-min="0" data-max="34"><td>0–34</td><td>D2</td><td>3</td></tr>
+  </tbody></table></div>
+  <p class="hint">Custom scale; official school or board conversions may differ.</p>
+</section>
+<footer>Made by Polymath Wizard Zeeshan</footer>
+</main>
+
+<section class="panel" id="storedPanel" hidden aria-label="Stored marks records">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+    <h2 style="font-size:1.2rem;margin:0 0 10px">Stored data on this device</h2>
+    <button class="secondary" id="closeStored" type="button">Close</button>
+  </div>
+  <p class="hint">Records are saved locally on this device/browser. Select Load to restore a record.</p>
+  <div id="storedList"></div>
+</section>
+<style>
+.stored-item{border:1px solid var(--line);border-radius:10px;padding:10px;margin:8px 0;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.stored-item p{margin:3px 0;color:var(--muted);font-size:.9rem}.stored-buttons{display:flex;gap:6px;flex-wrap:wrap}.stored-buttons button{padding:7px 10px;font-size:.9rem}#storedPanel[hidden]{display:none}
+</style>
+
+<script>
+(() => {
+  const names = ['Hindi','Telugu','English','Mathematics','Science','Social'];
+  const body = document.getElementById('subjects');
+  const head = document.getElementById('subjectHead');
+  const toggle = document.getElementById('formativeToggle');
+  const gradeRows = [...document.querySelectorAll('#gradeTable tr')];
+  const message = document.getElementById('message');
+  let faMode = false;
+
+  function setText(id, value) { document.getElementById(id).textContent = value; }
+  function say(text, error=false) { message.textContent=text; message.className='status'+(error?' error':''); }
+  function getGrade(percent) {
+    const row = gradeRows.find(r => percent >= Number(r.dataset.min));
+    return row ? {grade:row.cells[1].textContent, gpa:Number(row.cells[2].textContent)} : null;
+  }
+  function updateGradeReference() {
+    gradeRows.forEach((row, index) => {
+      const min = Number(row.dataset.min), max = Number(row.dataset.max);
+      if (!faMode) {
+        row.cells[0].textContent = `${min}–${max} /100`;
+      } else {
+        const lower = Math.ceil(min / 5);
+        const upper = index === 0 ? 20 : Math.ceil(Number(gradeRows[index - 1].dataset.min) / 5) - 1;
+        row.cells[0].textContent = `${lower}–${upper} /20`;
+      }
+    });
+  }
+  function buildTable() {
+    if (faMode) {
+      head.innerHTML='<tr><th>Subject</th><th>PW /5</th><th>Seminar /5</th><th>CLW /5</th><th>Test /5</th><th>Total /20</th><th>Grade</th><th>GPA</th></tr>';
+      body.innerHTML=names.map(name=>`<tr><td>${name}</td>${['PW','Seminar','CLW','Test'].map(label=>`<td><input class="fa-input" type="text" inputmode="numeric" maxlength="1" autocomplete="off" placeholder="0–5" aria-label="${name} ${label} marks"></td>`).join('')}<td class="subject-total">—</td><td class="grade">—</td><td class="gpa">—</td></tr>`).join('');
+      setText('subtitle','F.A mode: enter PW, Seminar, CLW and Test marks (0–5 each). Each subject is out of 20.');
+      setText('resultHint','F.A grades and GPA use each subject total out of 20. Overall total is out of 120.');
+    } else {
+      head.innerHTML='<tr><th>Subject</th><th>S.A Marks /80</th><th>F.A Marks /20</th><th>Total /100</th><th>Grade</th><th>GPA</th></tr>';
+      body.innerHTML=names.map(name=>`<tr><td>${name}</td><td><input class="sa-input" type="text" inputmode="numeric" maxlength="2" autocomplete="off" placeholder="0–80" aria-label="${name} S.A marks"></td><td><input class="fa-manual-input" type="text" inputmode="numeric" maxlength="2" autocomplete="off" placeholder="0–20" aria-label="${name} F.A marks"></td><td class="subject-total">—</td><td class="grade">—</td><td class="gpa">—</td></tr>`).join('');
+      setText('subtitle','S.A mode: enter S.A marks out of 80 and F.A marks out of 20 manually for every subject.');
+      setText('resultHint','Each subject total is S.A + F.A, out of 100. All six subjects total 600.');
+    }
+    updateGradeReference();
+    calculate();
+  }
+  function parse(input, max, label, errors) {
+    const raw=input.value.trim();
+    input.classList.remove('invalid'); input.removeAttribute('aria-invalid');
+    if(raw==='') return null;
+    if(!/^\d+$/.test(raw)||Number(raw)>max) {
+      errors.push(`${label}: enter a whole number from 0 to ${max}.`);
+      input.classList.add('invalid'); input.setAttribute('aria-invalid','true');
+      return null;
+    }
+    return Number(raw);
+  }
+  function calculate() {
+    const rows=[...body.querySelectorAll('tr')], errors=[], results=[];
+    let entered=0;
+    const expected=faMode?24:12, maximum=faMode?120:600;
+    rows.forEach((row,i)=>{
+      if(faMode) {
+        const values=[...row.querySelectorAll('.fa-input')].map(input=>{
+          const value=parse(input,5,`${names[i]} F.A`,errors);
+          if(value!==null) entered++;
+          return value;
+        });
+        results.push(values.every(v=>v!==null)?values.reduce((a,b)=>a+b,0):null);
+      } else {
+        const sa=parse(row.querySelector('.sa-input'),80,`${names[i]} S.A`,errors);
+        const fa=parse(row.querySelector('.fa-manual-input'),20,`${names[i]} F.A`,errors);
+        if(sa!==null) entered++;
+        if(fa!==null) entered++;
+        results.push(sa!==null&&fa!==null?sa+fa:null);
+      }
+      row.querySelector('.subject-total').textContent='—';
+      row.querySelector('.grade').textContent='—';
+      row.querySelector('.gpa').textContent='—';
+    });
+    setText('total','—'); setText('percentage','—'); setText('overallGrade','—'); setText('overallGpa','—');
+    setText('outOf',`out of ${maximum} · ${entered}/${expected} fields entered`);
+    gradeRows.forEach(row=>row.classList.remove('current'));
+    if(errors.length) { say(errors[0]+' Results are not calculated until all values are valid.',true); return; }
+    if(entered!==expected) { say(entered?`Enter all marks. ${expected-entered} field(s) remaining.`:'Enter marks to calculate results.'); return; }
+
+    let grand=0;
+    rows.forEach((row,i)=>{
+      const total=results[i], grade=getGrade(faMode?total/20*100:total);
+      grand+=total;
+      row.querySelector('.subject-total').textContent=String(total);
+      row.querySelector('.grade').innerHTML=`<span class="pill">${grade.grade}</span>`;
+      row.querySelector('.gpa').textContent=String(grade.gpa);
+    });
+    const percent=grand/maximum*100, overall=getGrade(percent);
+    setText('total',String(grand)); setText('outOf',`out of ${maximum} · ${expected}/${expected} fields entered`);
+    setText('percentage',percent.toFixed(2)+'%'); setText('overallGrade',overall.grade); setText('overallGpa',String(overall.gpa));
+    gradeRows.forEach(row=>row.classList.toggle('current',row.cells[1].textContent===overall.grade));
+    say('All marks entered. Results calculated.');
+  }
+  body.addEventListener('input',calculate);
+  body.addEventListener('keydown',event=>{
+    if(event.key==='Enter'&&event.target.matches('input')) {
+      event.preventDefault();
+      const inputs=[...body.querySelectorAll('input')], i=inputs.indexOf(event.target);
+      if(i>=0&&i<inputs.length-1) { inputs[i+1].focus(); inputs[i+1].select(); } else event.target.blur();
+    }
+  });
+  toggle.addEventListener('change',()=>{faMode=toggle.checked;buildTable();});
+  document.getElementById('clear').addEventListener('click',()=>{
+    body.querySelectorAll('input').forEach(input=>input.value='');
+    calculate();
+    const first=body.querySelector('input'); if(first) first.focus();
+  });
+  document.getElementById('print').addEventListener('click',()=>window.print());
+
+  // Local persistence for the Android/WebView storage test.
+  const STORAGE_KEY = 'teachersAssist.savedMarks.v1';
+  function readSaved() {
+    try { const value = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); return Array.isArray(value) ? value : []; }
+    catch (_) { return []; }
+  }
+  function writeSaved(records) { localStorage.setItem(STORAGE_KEY, JSON.stringify(records)); }
+  function currentRecord() {
+    const rows = [...body.querySelectorAll('tr')];
+    const data = rows.map((row, i) => ({
+      subject: names[i],
+      values: [...row.querySelectorAll('input')].map(input => input.value.trim())
+    }));
+    const mode = faMode ? 'F.A' : 'S.A';
+    const now = new Date();
+    return {
+      id: (now.getTime().toString(36) + Math.random().toString(36).slice(2, 7)),
+      mode, savedAt: now.toLocaleString(), data,
+      total: document.getElementById('total').textContent,
+      percentage: document.getElementById('percentage').textContent,
+      overallGrade: document.getElementById('overallGrade').textContent,
+      overallGpa: document.getElementById('overallGpa').textContent
+    };
+  }
+  function renderStored() {
+    const list = document.getElementById('storedList');
+    const records = readSaved();
+    if (!records.length) {
+      list.innerHTML = '<p class="status">No saved records yet. Enter marks and press Store.</p>';
+      return;
+    }
+    list.innerHTML = records.slice().reverse().map(record => {
+      const summary = record.total && record.total !== '—' ? `Total ${record.total} · ${record.percentage}` : 'Draft marks saved';
+      return `<article class="stored-item"><div><strong>${record.mode} mode · ${record.savedAt}</strong><p>${summary}</p></div><div class="stored-buttons"><button class="primary" type="button" data-load="${record.id}">Load</button><button class="secondary" type="button" data-delete="${record.id}">Delete</button></div></article>`;
+    }).join('');
+  }
+  function loadRecord(id) {
+    const record = readSaved().find(item => item.id === id);
+    if (!record) return;
+    faMode = record.mode === 'F.A';
+    toggle.checked = faMode;
+    buildTable();
+    const rows = [...body.querySelectorAll('tr')];
+    rows.forEach((row, i) => {
+      const values = record.data[i]?.values || [];
+      [...row.querySelectorAll('input')].forEach((input, j) => { input.value = values[j] ?? ''; });
+    });
+    calculate();
+    document.getElementById('storedPanel').hidden = true;
+    say(`Loaded saved ${record.mode} record from ${record.savedAt}.`);
+  }
+  document.getElementById('storeData').addEventListener('click', () => {
+    try {
+      const record = currentRecord();
+      const records = readSaved();
+      records.push(record);
+      writeSaved(records);
+      say(`Saved ${record.mode} marks on this device. Open Stored data to retrieve them.`);
+    } catch (error) {
+      say('Could not save data. Device storage may be unavailable or full.', true);
+    }
+  });
+  document.getElementById('showStored').addEventListener('click', () => {
+    renderStored();
+    document.getElementById('storedPanel').hidden = false;
+    document.getElementById('storedPanel').scrollIntoView({behavior:'smooth', block:'nearest'});
+  });
+  document.getElementById('closeStored').addEventListener('click', () => { document.getElementById('storedPanel').hidden = true; });
+  document.getElementById('storedList').addEventListener('click', event => {
+    const load = event.target.closest('[data-load]');
+    const del = event.target.closest('[data-delete]');
+    if (load) loadRecord(load.dataset.load);
+    if (del) {
+      const records = readSaved().filter(record => record.id !== del.dataset.delete);
+      writeSaved(records); renderStored();
+    }
+  });
+
+  buildTable();
+})();
+</script>
+</body>
+</html>
